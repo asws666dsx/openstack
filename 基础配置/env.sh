@@ -6,8 +6,8 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-
-sudo apt-get install -y expect
+ 
+sudo apt-get install -y expect &> /dev/null
 
 
 function auto_scp {
@@ -44,35 +44,60 @@ env_variables() {
     read -p "控制节点 IP: " controller
     read -p "计算节点 IP(用空格分隔): " -a compute_ip
     read -p "请输入外网网段,格式如[xxx.xxx.xxx.0/24]: " network_segment
-    read -p "请输入网桥名称(名称自定义如: br-eth1):" 
-    echo "---------------------------基础服务配置信息---------------------------"
-    read -sp "请输入mysql 密码: " db_password
-    echo ""
-    read -sp "请输入rabbitmq 密码: " rabbitmq_password
-    echo ""
-    echo "---------------------------openstack服务配置信息---------------------------"
-    read -sp "请输入keystone 密码: " keystone
-    echo ""
-    read -sp "请输入glance 密码: " glance
-    echo ""
-    read -sp "请输入placement密码: " placement
-    echo ""
-    read -sp "请输入neutron密码: " neutron
+
+
+
+    #随机密码
+    read -p  "服务与组件密码是否随机[Y/N]:" Whether
+    Whether=$(echo "$Whether" | tr '[:upper:]' '[:lower:]')
+    if  [ "$Whether" == y ]; then 
+        if  ! command -v  openssl &> /dev/null; then
+            apt install -y  openssl
+        fi
+        db_password=$(openssl rand -base64 8 | tr -dc 'A-Za-z0-9' | head -c 22)
+        rabbitmq_password=$(openssl rand -base64 8 | tr -dc 'A-Za-z0-9' | head -c 22)
+        keystone=$(openssl rand -base64 8 | tr -dc 'A-Za-z0-9' | head -c 22)
+        glance=$(openssl rand -base64 8 | tr -dc 'A-Za-z0-9' | head -c 22)
+        placement=$(openssl rand -base64 8 | tr -dc 'A-Za-z0-9' | head -c 22)
+        neutron=$(openssl rand -base64 8 | tr -dc 'A-Za-z0-9' | head -c 22)
+        nova=$(openssl rand -base64 8 | tr -dc 'A-Za-z0-9' | head -c 22)
+    else
+        echo "---------------------------基础服务配置信息---------------------------"
+        read -sp "请输入mysql 密码: " db_password
+        echo ""
+        read -sp "请输入rabbitmq 密码: " rabbitmq_password
+        echo ""
+        echo "---------------------------openstack服务配置信息---------------------------"
+        read -sp "请输入keystone 密码: " keystone
+        echo ""
+        read -sp "请输入glance 密码: " glance
+        echo ""
+        read -sp "请输入placement密码: " placement
+        echo ""
+        read -sp "请输入neutron密码: " neutron
+        read -sp "请输入nova密码: " nova
+    fi 
+
+    # 提示用户选择网络模式
     echo "请选择要使用的网络模式[1.Linux Bridge 2.Open vSwitch]"
-    read -p "请输入你的选择 [1 或 2]:"  inpute_choice
+    read -p "请输入你的选择 [1 或 2]: " input_choice
+
+    # 判断用户选择
     if [ "$input_choice" == "1" ]; then
         choice=1
     else
-        echo "请选择Open vSwitch 网络模式使用的模式[1.Provider networks  2.Self-service networks]"
+        # 提示用户选择 Open vSwitch 网络模式
+        echo "请选择 Open vSwitch 网络模式使用的模式 [1.Provider networks  2.Self-service networks]"
         read -p "请输入你的选择 [1 或 2]: " input_open_choice
-        if [ "$input_open_choice" == "1" ]; then 
+
+        if [ "$input_open_choice" == "1" ]; then
             choice=2
         else
             choice=3
         fi
     fi
-    read -sp "请输入nova密码: " nova
-    echo ""
+
+
 
     export_file="/var/openstack/export"
 
@@ -118,6 +143,7 @@ env_variables() {
             ((number++))
         done
     } >> /etc/hosts
+
 
     # 拷贝文件到其他主机
     for ((i = 0; i < ${#compute_ip[@]}; i++)); do
