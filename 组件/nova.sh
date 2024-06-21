@@ -1,5 +1,5 @@
 #!/bin/bash
-source /etc/keystone/admin-openrc.sh
+source /var/openstack/export
 
 
 
@@ -10,7 +10,8 @@ node=$(echo "$node" | tr '[:upper:]' '[:lower:]')
 
 
 nova_controller() {
-    source /var/openstack/export
+    
+    source /etc/keystone/admin-openrc.sh
     mysql -uroot -p$db_password -e "CREATE DATABASE IF NOT EXISTS nova_api;"
     mysql -uroot -p$db_password -e "CREATE DATABASE IF NOT EXISTS nova;"
     mysql -uroot -p$db_password -e "CREATE DATABASE IF NOT EXISTS nova_cell0;"

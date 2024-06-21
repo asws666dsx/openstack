@@ -36,6 +36,7 @@ env_variables() {
     choice=
     mkdir -p /var/openstack/
     touch /var/openstack/export
+    hostnamectl set-hostname controller
     echo "---------------------------基础环境信息---------------------------"
     read -p "输入登入用户名: " username
     read -sp "输入登入密码: " password

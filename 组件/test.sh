@@ -105,6 +105,8 @@ linuxbridge_compute() {
     read -p "这是第几个compute: " number
     in_node="compute_ip_$number"
     in_node_ip=${!in_node}
+    ip a
+    read -p "请输入当前节点provider 网卡名:" eth
 
     cp /etc/neutron/plugins/ml2/linuxbridge_agent.ini /etc/neutron/plugins/ml2/linuxbridge_agent.ini.source
     cp /etc/neutron/neutron.conf /etc/neutron/neutron.conf.source
@@ -237,12 +239,10 @@ open_vSwitch() {
     service neutron-openvswitch-agent restart
     service neutron-dhcp-agent restart
     service neutron-metadata-agent restart
-    if [ -z "$mode" ]; then
-        systemctl enable neutron-server neutron-openvswitch-agent neutron-dhcp-agent neutron-metadata-agent
-    else
-        service neutron-l3-agent restart
-        systemctl enable neutron-server neutron-openvswitch-agent neutron-dhcp-agent neutron-metadata-agent neutron-l3-agent
-    fi
+
+    service neutron-l3-agent restart
+    systemctl enable neutron-server neutron-openvswitch-agent neutron-dhcp-agent neutron-metadata-agent neutron-l3-agent
+
     sleep 4
     openstack network agent list
 }
@@ -281,8 +281,6 @@ open_vSwitch_compute() {
         ip a
         read -p "请输入当前节点provider 网卡名:" eth
             crudini --set /etc/neutron/plugins/ml2/openvswitch_agent.ini ovs bridge_mappings provider:"$br_eth"
-    else
-        :
     fi
 
     

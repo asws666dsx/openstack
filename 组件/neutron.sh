@@ -148,11 +148,7 @@ open_vSwitch() {
     cp /etc/neutron/plugins/ml2/openvswitch_agent.ini /etc/neutron/plugins/ml2/openvswitch_agent.ini.source
     cp /etc/neutron/metadata_agent.ini /etc/neutron/metadata_agent.ini.source
     cp /etc/neutron/dhcp_agent.ini /etc/neutron/dhcp_agent.ini.source
-    eth=$(ip -o link show | awk '$9 == "DOWN" {gsub(":", "", $2); print $2}')
-    if [ -z "$eth" ]; then
-        echo "错误: 无法找到节点 外部 的网络接口。"
-        exit 1
-    fi
+
     ovs-vsctl add-br "$br_eth"
 
     # neutron.conf
@@ -296,6 +292,9 @@ open_vSwitch_compute() {
  
 
     read -p "这是第几个compute: " number
+    # read -p "是否开启flat:[y/n]": whether
+    # if [ "$whether" == 'y']
+    
     in_node="compute_ip_$number"
     in_node_ip=${!in_node}
 
