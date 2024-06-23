@@ -70,6 +70,37 @@ EOL
 }
 
 
+
+skyline() {
+    mysql -uroot -p$db_password -e "CREATE DATABASE IF NOT EXISTS skyline DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci";
+    GRANT ALL PRIVILEGES ON skyline.* TO 'skyline'@'localhost' IDENTIFIED BY 'skylineredhat';
+    GRANT ALL PRIVILEGES ON skyline.* TO 'skyline'@'%' IDENTIFIED BY 'skylineredhat';
+    openstack user create --domain default --password  skyline skyline
+    openstack role add --project service --user skyline admin
+    sudo apt-get install -y  apt-transport-https  ca-certificates curl gnupg-agent  software-properties-common
+
+    sudo curl -fsSL https://mirrors.aliyun.com/docker-ce/linux/ubuntu/gpg | sudo apt-key add -
+    apt-get install -y docker.io
+
+    mkdir -vp /etc/docker/
+sudo tee /etc/docker/daemon.json <<-'EOF'
+{
+"registry-mirrors": [
+"https://docker.mirrors.ustc.edu.cn",
+"https://hub-mirror.c.163.com",
+"https://reg-mirror.qiniu.com",
+"https://registry.docker-cn.com"
+],
+"exec-opts": ["native.cgroupdriver=systemd"]
+}
+EOF
+sudo systemctl daemon-reload
+sudo systemctl start docker
+sudo systemctl enable docker
+}
+docker pull registry.cn-beijing.aliyuncs.com/wdtn/skyline
+mkdir -p /etc/skyline /var/log/skyline /var/lib/skyline /var/log/nginx /etc/skyline/policy
+
 if [ "$number" == "1" ]; then 
 
     horizon

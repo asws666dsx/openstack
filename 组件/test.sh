@@ -4,10 +4,22 @@ source /var/openstack/export
 
 br_eth="br-ex"
 
-echo "net.bridge.bridge-nf-call-iptables = 1" >>/etc/sysctl.conf
-echo "net.bridge.bridge-nf-call-ip6tables = 1 " >>/etc/sysctl.conf
-modprobe br_netfilter
-sysctl -p
+# 检查 net.bridge.bridge-nf-call- 配置是否存在
+test=$(sysctl -p | grep net.bridge.bridge-nf-call-)
+
+if [ -z "$test" ]; then
+    # 如果 net.bridge.bridge-nf-call- 配置不存在，追加到 /etc/sysctl.conf
+    if ! grep -q "net.bridge.bridge-nf-call-iptables = 1" /etc/sysctl.conf; then
+        echo "net.bridge.bridge-nf-call-iptables = 1" >>/etc/sysctl.conf
+    fi
+
+    if ! grep -q "net.bridge.bridge-nf-call-ip6tables = 1" /etc/sysctl.conf; then
+        echo "net.bridge.bridge-nf-call-ip6tables = 1" >>/etc/sysctl.conf
+    fi
+
+    # 加载 br_netfilter 模块并应用新的 sysctl 配置
+    modprobe br_netfilter && sysctl -p
+fi
 
 eth=
 
