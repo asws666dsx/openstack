@@ -139,6 +139,7 @@ env_variables() {
         echo "export neutron_mode=\"$choice\""
         echo "export nova=\"$nova\""
         echo "export skyline=\"$skyline\""
+        echo "export dashboard_choice=\"$dashboard_choice\""
     } > "$export_file"
 
     # 写入 /etc/hosts 文件
