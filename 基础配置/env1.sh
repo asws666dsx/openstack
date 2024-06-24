@@ -45,7 +45,12 @@ env_variables() {
     read -p "控制节点 IP: " controller
     read -p "计算节点 IP(用空格分隔): " -a compute_ip
     read -p "请输入外网网段,格式如[xxx.xxx.xxx.0/24]: " network_segment
-
+    read -p "请选择要使用的dashboard:[1.horizon,2.skyline]:" dashboard
+    if [ "$dashboard" == "1" ]; then 
+        dashboard_choice=1
+    else
+        dashboard_choice=2
+    fi
 
 
     #随机密码
@@ -62,6 +67,7 @@ env_variables() {
         placement=$(openssl rand -base64 8 | tr -dc 'A-Za-z0-9' | head -c 22)
         neutron=$(openssl rand -base64 8 | tr -dc 'A-Za-z0-9' | head -c 22)
         nova=$(openssl rand -base64 8 | tr -dc 'A-Za-z0-9' | head -c 22)
+        skyline=$(openssl rand -base64 8 | tr -dc 'A-Za-z0-9' | head -c 22)
     else
         echo "---------------------------基础服务配置信息---------------------------"
         read -sp "请输入mysql 密码: " db_password
@@ -77,12 +83,13 @@ env_variables() {
         echo ""
         read -sp "请输入neutron密码: " neutron
         read -sp "请输入nova密码: " nova
+        read -sp "请输入skyline密码:" skyline
     fi 
 
     # 提示用户选择网络模式
     echo "请选择要使用的网络模式[1.Linux Bridge 2.Open vSwitch]"
     read -p "请输入你的选择 [1 或 2]: " input_choice
-
+ 
     # 判断用户选择
     if [ "$input_choice" == "1" ]; then
         choice=1
@@ -131,6 +138,7 @@ env_variables() {
         echo "export neutron=\"$neutron\""
         echo "export neutron_mode=\"$choice\""
         echo "export nova=\"$nova\""
+        echo "export skyline=\"$skyline\""
     } > "$export_file"
 
     # 写入 /etc/hosts 文件

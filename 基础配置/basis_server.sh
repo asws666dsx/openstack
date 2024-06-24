@@ -10,7 +10,8 @@ setup_mariadb() {
     fi
 
     #sudo apt-get install -y  mariadb-server=1:10.11.7-2ubuntu2 python3-pymysql   ## 24.02
-    sudo apt-get install -y  mariadb-server=1:10.6.16-0ubuntu0.22.04.1 python3-pymysql 
+    #sudo apt-get install -y  mariadb-server=1:10.6.16-0ubuntu0.22.04.1 python3-pymysql 
+    sudo apt-get install -y  mariadb-server python3-pymysql 
     cp /etc/mysql/my.cnf /etc/mysql/my.cnf.bak
 
     cat <<EOF >>/etc/mysql/my.cnf

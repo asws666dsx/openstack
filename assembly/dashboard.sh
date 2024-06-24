@@ -1,8 +1,7 @@
 #!/bin/bash
 
 
-
-read -p "选择要安装的dashboard[1.horizon,2.skyline]": number
+source /var/opensatck/export
 
 
 horizon(){
@@ -73,8 +72,8 @@ EOL
 
 skyline() {
     mysql -uroot -p$db_password -e "CREATE DATABASE IF NOT EXISTS skyline DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci";
-    GRANT ALL PRIVILEGES ON skyline.* TO 'skyline'@'localhost' IDENTIFIED BY 'skylineredhat';
-    GRANT ALL PRIVILEGES ON skyline.* TO 'skyline'@'%' IDENTIFIED BY 'skylineredhat';
+    mysql -uroot -p$db_password -e "GRANT ALL PRIVILEGES ON skyline.* TO 'skyline'@'localhost' IDENTIFIED BY '$skyline';"
+    mysql -uroot -p$db_password -e "GRANT ALL PRIVILEGES ON skyline.* TO 'skyline'@'%' IDENTIFIED BY '$skyline';"
     openstack user create --domain default --password  skyline skyline
     openstack role add --project service --user skyline admin
     sudo apt-get install -y  apt-transport-https  ca-certificates curl gnupg-agent  software-properties-common
@@ -97,13 +96,50 @@ EOF
 sudo systemctl daemon-reload
 sudo systemctl start docker
 sudo systemctl enable docker
-}
+
 docker pull registry.cn-beijing.aliyuncs.com/wdtn/skyline
 mkdir -p /etc/skyline /var/log/skyline /var/lib/skyline /var/log/nginx /etc/skyline/policy
 
-if [ "$number" == "1" ]; then 
 
+# 配置文件路径
+CONFIG_FILE="/etc/skyline/skyline.yaml"
+
+# 检查文件是否存在
+if [ ! -f "$CONFIG_FILE" ]; then
+  echo "文件 $CONFIG_FILE 不存在."
+  exit 1
+fi
+
+# 修改default部分
+sed -i -e "/^default:/,/^openstack:/ s|^\(  database_url: \).*|\1mysql://skyline:$skyline@$controller:3306/skyline|" \
+       -e "/^default:/,/^openstack:/ s|^\(  debug: \).*|\1true|" \
+       -e "/^default:/,/^openstack:/ s|^\(  log_dir: \).*|\1/var/log/skyline|" \
+       "$CONFIG_FILE"
+
+# 修改openstack部分
+sed -i -e "/^openstack:/,/^setting:/ s|^\(  keystone_url: \).*|\1http://$controller:5000/v3/|" \
+       -e "/^openstack:/,/^setting:/ s|^\(  system_user_password: \).*|\1$skyline|" \
+       "$CONFIG_FILE"
+
+docker run -d --name skyline_bootstrap -e KOLLA_BOOTSTRAP="" -v /etc/skyline/skyline.yaml:/etc/skyline/skyline.yaml -v /var/log:/var/log --net=host registry.cn-beijing.aliyuncs.com/wdtn/skyline
+
+sleep 8
+
+docker logs skyline_bootstrap
+docker rm -f skyline_bootstrap
+docker run -d --name skyline --restart=always -v /etc/skyline/skyline.yaml:/etc/skyline/skyline.yaml -v /var/log:/var/log --net=host registry.cn-beijing.aliyuncs.com/wdtn/skyline
+
+
+UP=$(docker ps -a | awk '$NF=="skyline" {print $7}')
+if  [ "$UP" == "Up" ]; then 
+    echo "http://$controller:9999"
+else
+    echo "部署失败"
+fi
+
+
+if [ "$dashboard_choice" == "1" ]; then 
     horizon
 else 
-    :
+    skyline
 fi 
